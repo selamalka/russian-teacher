@@ -1000,6 +1000,26 @@ function lookup(q){
   res.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
   return res.slice(0,8).map(r=>r[2]);
 }
+/* ---------- stress marks for free text ---------- */
+// Stress positions known from the app's own words, then from stress.txt (OpenRussian data, CC BY-SA 4.0).
+const OWN=(()=>{const m=new Map(),eat=s=>{for(const tok of R(s).toLowerCase().split(/[^а-яё́]+/)){const i=tok.indexOf(ACC);
+    if(i>0&&tok.indexOf(ACC,i+1)<0){const w=plain(tok);if(!m.has(w))m.set(w,i-1)}}};
+  LEX.forEach(e=>{eat(e.l);if(e.forms)eat(e.forms);if(e.pres)eat(e.pres);if(e.past)eat(e.past);if(e.fut)eat(e.fut);if(e.rows)e.rows.forEach(eat)});
+  ALL.forEach(i=>{eat(i.ru);(i.opts||[]).forEach(eat)});EXTRA.forEach(x=>eat(x[0]));return m})();
+let STRESS="",stressP=null;
+function loadStress(){return stressP||(stressP=fetch("stress.txt").then(r=>r.ok?r.text():"").then(t=>{STRESS=t?"\n"+t+"\n":""}).catch(()=>{STRESS=""}))}
+function stressOf(w){
+  if(OWN.has(w))return OWN.get(w);
+  if(!STRESS||!/^[а-яё]+$/.test(w))return -1;
+  const m=new RegExp("\\n"+w+"([0-9a-z])\\n").exec(STRESS);
+  return m?parseInt(m[1],36):-1}
+function addStress(text){
+  return text.replace(/[А-Яа-яЁё́]+/g,part=>{
+    if(part.includes(ACC))return part;
+    const low=part.toLowerCase();
+    if(low.includes("ё")||(low.match(/[аеиоуыэюя]/g)||[]).length<2)return part;
+    const i=stressOf(low);
+    return i<0?part:part.slice(0,i+1)+ACC+part.slice(i+1)})}
 const $fab=document.createElement("button");$fab.id="fab";$fab.setAttribute("aria-label","תרגום מעברית לרוסית");
 $fab.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>';
 document.body.appendChild($fab);
@@ -1012,6 +1032,7 @@ async function freeTranslate(){
   const q=$lq.value.trim();if(!q)return;
   const my=++trSeq,cyr=/[а-яё]/i.test(q);
   $lb.hidden=true;$lt.innerHTML='<p class="note">מתרגם…</p>';
+  const sp=cyr?null:loadStress();
   try{
     const r=await fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(q)+"&langpair="+(cyr?"ru|he":"he|ru"));
     const j=await r.json();
@@ -1019,8 +1040,9 @@ async function freeTranslate(){
     let t=j&&j.responseData&&j.responseData.translatedText;
     if(!r.ok||String(j.responseStatus)!=="200"||!t||/^MYMEMORY WARNING/i.test(t))throw new Error("bad");
     const ta=document.createElement("textarea");ta.innerHTML=t;t=ta.value;
+    if(sp){await sp;if(my!==trSeq)return;t=addStress(t)}
     $lt.innerHTML='<div class="lr"><div>'+(cyr?'<span class="hebig">'+esc(t)+"</span>":'<span class="ru">'+esc(t)+"</span>")+'<span class="he">'+esc(q)+"</span></div>"+(cyr?"":spkBtn(t))+"</div>"+
-      '<p class="note">תרגום מכונה משירות MyMemory. ייתכנו טעויות, ואין בו סימני הטעמה. מילים מהשיעורים לחיצות.</p>';
+      '<p class="note">תרגום מכונה משירות MyMemory, ייתכנו בו טעויות. סימני ההטעמה נוספו ממילון OpenRussian, ומילה נדירה עשויה להישאר בלי סימן. מילים מהשיעורים לחיצות.</p>';
     wrapWords($look,"#lookt .ru");
   }catch(e){
     if(my!==trSeq)return;
