@@ -188,6 +188,20 @@ button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .tr b{font-family:var(--f-display);font-size:18px;font-weight:500}
 .tr small{font-size:12px;color:var(--muted)}
 .trb{border:1.5px solid var(--rule);border-radius:10px;padding:7px 10px;font-size:13px;font-weight:700;white-space:nowrap}
+/* lookup */
+#fab{position:fixed;top:12px;left:max(12px,calc(50% - 228px));z-index:15;width:44px;height:44px;border-radius:50%;background:var(--line);color:var(--line-ink);display:grid;place-items:center;box-shadow:0 2px 8px rgba(10,16,24,.25)}
+#fab svg{width:21px;height:21px}
+.brand,.sbar{padding-inline-end:52px}
+#look{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column}
+#look[hidden]{display:none}
+.lpanel{position:relative;background:var(--surface);color:var(--ink);border-radius:0 0 20px 20px;width:100%;max-width:480px;margin:0 auto;padding:12px 18px 16px;max-height:70%;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.lrow{display:flex;gap:8px;align-items:center}
+#lookq{flex:1;min-width:0;font:inherit;font-size:20px;color:var(--ink);background:var(--paper);border:1.5px solid var(--rule);border-radius:12px;padding:11px 14px}
+#lookq:focus{outline:3px solid var(--line);outline-offset:1px}
+.lr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--rule)}
+.lr>div{flex:1;min-width:0;display:flex;flex-direction:column}
+.lr .ru{font-size:24px;font-weight:700;text-align:right}
+.lr .he{font-size:15px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){.prog u{transition:none}}
 </style>
 </head>
@@ -715,13 +729,15 @@ function cloudPush(){if(!ref)return;if(busy){dirty=true;return}busy=true;
 function save(){saveLocal();cloudPush()}
 /* ---------- speech ---------- */
 let tts=null,ruVoice=null;
-function setSpeak(){document.documentElement.classList.toggle("can-speak",!!(tts||ruVoice))}
+const hasSynth="speechSynthesis" in window;
+function setSpeak(){document.documentElement.classList.toggle("can-speak",!!(tts||ruVoice||hasSynth))}
 function findVoice(){try{ruVoice=speechSynthesis.getVoices().find(v=>/^ru/i.test(v.lang))||null}catch(e){ruVoice=null}setSpeak()}
-if("speechSynthesis" in window){findVoice();try{speechSynthesis.addEventListener("voiceschanged",findVoice)}catch(e){}}
+setSpeak();
+if(hasSynth){findVoice();try{speechSynthesis.addEventListener("voiceschanged",findVoice)}catch(e){}}
 function say(t){
   try{
     if(tts){tts.speak(t,{language:"ru",rate:0.9}).catch(()=>{});return}
-    if(ruVoice){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="ru-RU";u.voice=ruVoice;u.rate=0.9;speechSynthesis.speak(u)}
+    if(hasSynth){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="ru-RU";if(ruVoice)u.voice=ruVoice;u.rate=0.9;speechSynthesis.speak(u)}
   }catch(e){}
 }
 
@@ -933,6 +949,70 @@ function endSprint(){
   $app.innerHTML='<div class="sum"><span class="ru">Сто'+ACC+'п!</span><h1>'+spr.score+" תשובות נכונות בדקה</h1><p>"+(best?"שיא חדש.":"השיא שלך: "+S.best+".")+'</p><button class="go" data-act="sprint">שוב</button><button class="ghost" data-act="home"><b>חזרה למסלול</b><span></span></button></div>';
   spr=null;
 }
+
+/* ---------- Hebrew to Russian lookup ---------- */
+const EXTRA=("здра'вствуйте|שלום (רשמי);до'брое у'тро|בוקר טוב;до'брый ве'чер|ערב טוב;споко'йной но'чи|לילה טוב;до свида'ния|להתראות;извини'те|סליחה;не' за что|אין בעד מה, על לא דבר;"+
+"челове'к|איש, אדם, בן אדם;лю'ди|אנשים;мужчи'на|גבר;же'нщина|אישה;ма'льчик|ילד, בן;де'вочка|ילדה;де'ти|ילדים;ребёнок|תינוק, ילד קטן;сын|בן (של מישהו);дочь|בת (של מישהו);муж|בעל;жена'|רעיה, אשתו;де'душка|סבא;ба'бушка|סבתא;роди'тели|הורים;и'мя|שם;жизнь|חיים;мир|עולם, שלום (בין עמים);страна'|ארץ, מדינה;"+
+"еда'|אוכל;за'втрак|ארוחת בוקר;обе'д|ארוחת צהריים;у'жин|ארוחת ערב;мя'со|בשר;ку'рица|עוף, תרנגולת;яйцо'|ביצה;сыр|גבינה;молоко'|חלב;ма'сло|חמאה, שמן;са'хар|סוכר;соль|מלח;суп|מרק;сала'т|סלט;я'блоко|תפוח;карто'шка|תפוח אדמה, תפוחי אדמה;помидо'р|עגבנייה;огуре'ц|מלפפון;лук|בצל;фрукт|פרי;о'вощ|ירק;рис|אורז;вино'|יין;пи'во|בירה;"+
+"стака'н|כוס;ча'шка|ספל;таре'лка|צלחת;ло'жка|כף, כפית;ви'лка|מזלג;нож|סכין;кварти'ра|דירה;ко'мната|חדר;ку'хня|מטבח;туале'т|שירותים;душ|מקלחת;дверь|דלת;крова'ть|מיטה;стул|כיסא;дива'н|ספה;ключ|מפתח;"+
+"по'езд|רכבת;авто'бус|אוטובוס;самолёт|מטוס;аэропо'рт|שדה תעופה;ста'нция|תחנה;остано'вка|תחנת אוטובוס;биле'т|כרטיס;па'спорт|דרכון;гости'ница|מלון, בית מלון;больни'ца|בית חולים;врач|רופא;апте'ка|בית מרקחת;лека'рство|תרופה;банк|בנק;ры'нок|שוק;доро'га|דרך, כביש;"+
+"мо'ре|ים;река'|נהר;лес|יער;гора'|הר;со'лнце|שמש;луна'|ירח;звезда'|כוכב;не'бо|שמיים;дождь|גשם;снег|שלג;пого'да|מזג אוויר;жа'рко|חם (בחוץ);хо'лодно|קר (בחוץ);"+
+"день|יום;ночь|לילה;ве'чер|ערב;неде'ля|שבוע;ме'сяц|חודש;год|שנה;час|שעה;мину'та|דקה;всегда'|תמיד;никогда'|אף פעם, לעולם לא;иногда'|לפעמים;ча'сто|לעיתים קרובות, הרבה פעמים;ра'но|מוקדם;по'здно|מאוחר;бы'стро|מהר;ме'дленно|לאט;"+
+"воскресе'нье|יום ראשון;понеде'льник|יום שני;вто'рник|יום שלישי;среда'|יום רביעי;четве'рг|יום חמישי;пя'тница|יום שישי;суббо'та|שבת, יום שבת;"+
+"большо'й|גדול;ма'ленький|קטן;но'вый|חדש;ста'рый|ישן, זקן;молодо'й|צעיר;хоро'ший|טוב (שם תואר);плохо'й|רע, גרוע;краси'вый|יפה;дорого'й|יקר (שם תואר);дешёвый|זול (שם תואר);горя'чий|חם (אוכל, חפץ);холо'дный|קר (אוכל, חפץ);лёгкий|קל;тру'дный|קשה;интере'сный|מעניין;ва'жный|חשוב;счастли'вый|מאושר, שמח;уста'лый|עייף;голо'дный|רעב;больно'й|חולה;здоро'вый|בריא;дли'нный|ארוך;коро'ткий|קצר;высо'кий|גבוה;ни'зкий|נמוך;далеко'|רחוק;бли'зко|קרוב;напра'во|ימינה;нале'во|שמאלה;пря'мо|ישר;"+
+"кра'сный|אדום;си'ний|כחול;зелёный|ירוק;жёлтый|צהוב;бе'лый|לבן;чёрный|שחור;"+
+"голова'|ראש;рука'|יד;нога'|רגל;глаз|עין;у'хо|אוזן;нос|אף;се'рдце|לב;во'лосы|שיער;зуб|שן;спина'|גב;живо'т|בטן;"+
+"идти'|ללכת;е'хать|לנסוע;прийти'|לבוא, להגיע;дать|לתת;взять|לקחת;де'лать|לעשות;сказа'ть|לומר, להגיד;ду'мать|לחשוב;писа'ть|לכתוב;учи'ться|ללמוד;учи'ть|ללמד;игра'ть|לשחק, לנגן;спать|לישון;купи'ть|לקנות;прода'ть|למכור;плати'ть|לשלם;откры'ть|לפתוח;закры'ть|לסגור;ждать|לחכות;помо'чь|לעזור;спроси'ть|לשאול;отве'тить|לענות;по'мнить|לזכור;забы'ть|לשכוח;слы'шать|לשמוע;смотре'ть|להסתכל, לצפות;иска'ть|לחפש;найти'|למצוא;нача'ть|להתחיל;зако'нчить|לסיים, לגמור;сиде'ть|לשבת;стоя'ть|לעמוד;бежа'ть|לרוץ;пла'вать|לשחות;гото'вить|לבשל, להכין;смея'ться|לצחוק;пла'кать|לבכות;я могу'|אני יכול;ну'жно|צריך;"+
+"почему'|למה, מדוע;како'й|איזה;куда'|לאן;отку'да|מאיפה, מאין;чей|של מי;мо'жет быть|אולי;коне'чно|כמובן, בטח;ла'дно|בסדר, טוב (הסכמה);ещё|עוד;то'лько|רק;всё|הכול;все|כולם;мно'го|הרבה;ма'ло|מעט, קצת מדי;бо'льше|יותר;ме'ньше|פחות;потому' что|כי, מפני ש;е'сли|אם;и'ли|או;по'сле|אחרי;вме'сте|ביחד, יחד;"+
+"компью'тер|מחשב;интерне'т|אינטרנט;письмо'|מכתב;газе'та|עיתון;фильм|סרט;пе'сня|שיר;игра'|משחק;фотогра'фия|תמונה, צילום;пода'рок|מתנה;оде'жда|בגדים;руба'шка|חולצה;брю'ки|מכנסיים;ту'фли|נעליים;пальто'|מעיל;ша'пка|כובע;су'мка|תיק;часы'|שעון;очки'|משקפיים;"+
+"учи'тель|מורה;учени'к|תלמיד;инжене'р|מהנדס;программи'ст|מתכנת;води'тель|נהג;ло'шадь|סוס;коро'ва|פרה;пти'ца|ציפור;мышь|עכבר;медве'дь|דוב;волк|זאב;"+
+"ноль|אפס;оди'ннадцать|אחת עשרה;двена'дцать|שתים עשרה;два'дцать|עשרים;три'дцать|שלושים;сто|מאה;ты'сяча|אלף;"+
+"любо'вь|אהבה;война'|מלחמה;пра'вда|אמת;мечта'|חלום (שאיפה);отве'т|תשובה;сло'во|מילה;Росси'я|רוסיה;иври'т|עברית;англи'йский|אנגלית, אנגלי").split(";").map(x=>x.split("|"));
+const normHe=s=>s.replace(/[֑-ׇ]/g,"").replace(/[״"׳'?!.]/g,"").trim().toLowerCase();
+const heKeys=he=>he.replace(/\([^)]*\)/g,"").split(/[,;\/·]/).map(normHe).filter(Boolean);
+const POOL=(()=>{const seen=new Set(),out=[];
+  const add=(ru,he,lex)=>{const k=plain(ru).toLowerCase()+"|"+he;if(seen.has(k))return;seen.add(k);out.push({ru,he,lex,keys:heKeys(he),rk:plain(ru).toLowerCase()})};
+  LEX.forEach(e=>{if(e.pos!=="שם של יחסה")add(R(e.l),e.he,true)});
+  ALL.forEach(i=>{if(i.t==="w"||i.t==="s")add(i.ru,i.he,false)});
+  EXTRA.forEach(x=>add(R(x[0]),x[1],false));
+  return out})();
+function lookup(q){
+  q=normHe(q);if(!q)return null;
+  const cyr=/[а-яё]/i.test(q),res=[];
+  const alts=[q];
+  if(!cyr){if(/^[הוב]/.test(q)&&q.length>2)alts.push(q.slice(1));if(q.length>1)alts.push("ל"+q)}
+  for(const p of POOL){let best=9;
+    if(cyr){if(p.rk===q)best=0;else if(p.rk.startsWith(q))best=2;else if(q.length>1&&p.rk.includes(q))best=3}
+    else for(const k of p.keys){
+      const s=k===q?0:alts.includes(k)?1:k.split(" ").includes(q)?1.5:k.startsWith(q)?2:(q.length>1&&k.includes(q))?3:9;
+      if(s<best)best=s}
+    if(best<9)res.push([best+(p.lex?0:0.2)+(p.he.includes("(")?0.1:0),p.ru.length,p]);
+  }
+  res.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  return res.slice(0,8).map(r=>r[2]);
+}
+const $fab=document.createElement("button");$fab.id="fab";$fab.setAttribute("aria-label","תרגום מעברית לרוסית");
+$fab.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>';
+document.body.appendChild($fab);
+const $look=document.createElement("div");$look.id="look";$look.hidden=true;
+$look.innerHTML='<div class="dbg" data-lx="1"></div><div class="lpanel" role="dialog" aria-label="תרגום מעברית לרוסית"><div class="lrow"><input id="lookq" type="search" inputmode="text" dir="auto" autocomplete="off" autocapitalize="off" placeholder="כתבו מילה בעברית" aria-label="מילה לתרגום"><button class="x" data-lx="1" aria-label="סגור">✕</button></div><div id="lookr"></div></div>';
+document.body.appendChild($look);
+const $lq=$look.querySelector("#lookq"),$lr=$look.querySelector("#lookr");
+function drawLook(){
+  const r=lookup($lq.value);
+  if(r===null){$lr.innerHTML='<p class="note">התרגום מופיע תוך כדי הקלדה. המילון כולל כ־'+(Math.round(POOL.length/10)*10)+' מילים וביטויים נפוצים, ואפשר לחפש גם ברוסית.</p>';return}
+  if(view==="session"&&ses&&ses.cur&&!ses.cur.locked)ses.cur.peek=true;
+  if(!r.length){$lr.innerHTML='<p class="note">המילה הזאת לא נמצאת במילון של האפליקציה. נסו צורה בסיסית יותר: יחיד, זכר, או שם הפועל (״ללכת״).</p>';return}
+  $lr.innerHTML=r.map(p=>'<div class="lr"><div><span class="ru">'+p.ru+'</span><span class="he">'+esc(p.he)+"</span></div>"+
+    (p.lex?'<button class="trb" data-lex="'+esc(p.rk)+'">הטיות</button>':"")+spkBtn(p.ru)+"</div>").join("");
+}
+$fab.addEventListener("click",()=>{if(view==="sprint")return;$look.hidden=false;$lq.value="";drawLook();$lq.focus()});
+$lq.addEventListener("input",drawLook);
+$look.addEventListener("click",e=>{
+  const s=e.target.closest("[data-act=say]");if(s)return say(s.dataset.say);
+  const lx=e.target.closest("[data-lex]");if(lx){$look.hidden=true;return showWord(lx.dataset.lex)}
+  if(e.target.closest("[data-lx]"))$look.hidden=true;
+});
 
 /* ---------- events ---------- */
 $app.addEventListener("click",e=>{
