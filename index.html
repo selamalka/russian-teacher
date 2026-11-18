@@ -236,7 +236,9 @@ button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .lname{font-family:var(--f-ru);font-size:21px;font-weight:700;color:var(--ink);direction:ltr;unicode-bidi:isolate}
 .lex{display:flex;flex-direction:column;gap:4px;background:var(--gs);border-radius:12px;padding:10px 12px}
 .lex small{font-size:12px;color:var(--muted)}
-.lex div{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.lex div{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lex div span:nth-child(2){flex:1;text-align:start}
+.lex .spk{background:var(--surface)}
 .lexw{font-family:var(--f-ru);font-size:27px;direction:ltr;unicode-bidi:isolate}
 .lexw mark{background:none;color:var(--gc);font-weight:700}
 .bd{display:flex;flex-wrap:wrap;gap:5px;direction:ltr;justify-content:center}
@@ -936,7 +938,7 @@ function letterHTML(L){const d=LET[L],g=grp(L),ex=exFor(L);
    '<div class="lhero">'+tileHTML(L)+'<div class="lsound"><small>כך היא נשמעת</small><strong>'+esc(d.he)+"</strong>"+(d.lat?'<i dir="ltr">['+d.lat+"]</i>":"")+"</div></div>"+
    '<p class="llike">'+esc(d.like)+"</p>"+
    '<div class="lrow2"><span>שם האות: <span class="lname">'+R(d.name)+"</span></span>"+spkBtn(R(d.name))+"</div>"+
-   (ex?'<div class="lex"><small>איפה פוגשים אותה</small><div><span class="lexw">'+markL(ex.ru,L)+"</span><span>"+esc(ex.he)+"</span></div></div>":"")+"</div>"}
+   (ex?'<div class="lex"><small>איפה פוגשים אותה</small><div><span class="lexw">'+markL(ex.ru,L)+"</span><span>"+esc(ex.he)+"</span>"+spkBtn(ex.ru)+"</div></div>":"")+"</div>"}
 // Letter-by-letter transcription of a word: each letter with its Hebrew sound under it.
 function breakdown(ru){const out=[];
   for(const ch of ru){if(ch===ACC){if(out.length)out[out.length-1].s=1;continue}out.push({c:ch})}
