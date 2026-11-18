@@ -175,14 +175,19 @@ button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .taphint{color:var(--muted);font-size:13px}
 .xp{background:var(--line-soft);border-radius:12px;padding:12px 14px;margin-top:10px;display:flex;flex-direction:column;gap:6px}
 .xp[hidden]{display:none}
-.xh{display:flex;flex-direction:column}
+.xh{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.xh>div{display:flex;flex-direction:column;min-width:0}
+.xp .spk{background:var(--surface)}
+.xp p .spk{width:32px;height:32px;vertical-align:middle;margin-inline-start:8px}
+.xp p .spk svg{width:16px;height:16px}
+.can-speak .xp p .spk{display:inline-grid}
 .xh .ru{font-size:24px;font-weight:700;text-align:right}
 .xh b{font-size:14px;color:var(--line)}
 .xp p{font-size:15px}
 .xp p i{font-style:normal;font-weight:700;font-size:12px;color:var(--muted);display:block}
 .xp p .ru{font-size:17px}
 .dpanel .wd.on{background:var(--line);color:var(--line-ink);border-radius:5px;text-decoration:none;padding:0 3px}
-.tr{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;margin-top:6px}
+.tr{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:1fr auto auto;gap:8px 12px;align-items:center;margin-top:6px}
 .tr>div{display:flex;flex-direction:column;min-width:0}
 .tr .ru{font-size:19px;font-weight:700;text-align:right}
 .tr b{font-family:var(--f-display);font-size:18px;font-weight:500}
@@ -663,9 +668,10 @@ function explain(e,d,formText){
     else lines.push(["משמעות",esc(CASE_HE[c](he))+(pl?" (ברבים)":"")]);
     lines.push(["מתי",fmt(CASE_USE[c])]);
     if(e.k==="n"){const f=plain(formText)===plain(R(e.l))&&/^[А-ЯЁ]/.test(e.l)?formText:formText;const x=CASE_EX[c](f);
-      lines.push(["דוגמה",'<span class="ru">'+R(x[0])+"</span> · "+esc(x[1](he))+(pl?" (ברבים)":"")])}
+      lines.push(["דוגמה",'<span class="ru">'+R(x[0])+"</span> · "+esc(x[1](he))+(pl?" (ברבים)":"")+spkBtn(R(x[0]))])}
   }
-  return '<div class="xh"><span class="ru">'+formText+"</span><b>"+esc(title)+"</b></div>"+lines.map(l=>"<p><i>"+l[0]+"</i>"+l[1]+"</p>").join("");
+  const who=e.k!=="v"?"":R((d.t==="past"?PAST_P[c]:PRON[c].split(" / ")[0])+" ");
+  return '<div class="xh"><div><span class="ru">'+formText+"</span><b>"+esc(title)+"</b></div>"+spkBtn(who+formText)+"</div>"+lines.map(l=>"<p><i>"+l[0]+"</i>"+l[1]+"</p>").join("");
 }
 function showWord(raw){
   if(view==="sprint")return;
@@ -690,7 +696,7 @@ $dict.addEventListener("click",e=>{
     const box=document.createElement("div");box.className="tr";
     box.innerHTML=list.map(en=>{const same=plain(R(en.l)).toLowerCase()===plain(tok);
       return '<div><span class="ru">'+(same?"":wd.textContent+" ← ")+R(en.l)+'</span><b>'+esc(en.he)+'</b><small>'+esc(en.pos||(en.k==="n"?"שם עצם":en.k==="v"?"פועל":""))+
-        '</small></div><button class="trb" data-open="'+esc(plain(R(en.l)))+'">לערך המלא</button>'}).join("");
+        '</small></div>'+spkBtn(R(en.l))+'<button class="trb" data-open="'+esc(plain(R(en.l)))+'">לערך המלא</button>'}).join("");
     const host=wd.closest(".xp")||wd.closest("p");
     if(host.classList.contains("xp"))host.appendChild(box);else host.after(box);
     box.scrollIntoView({block:"nearest",behavior:"smooth"});
