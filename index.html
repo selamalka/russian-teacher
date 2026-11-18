@@ -207,6 +207,9 @@ button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .lr>div{flex:1;min-width:0;display:flex;flex-direction:column}
 .lr .ru{font-size:24px;font-weight:700;text-align:right}
 .lr .he{font-size:15px;color:var(--muted)}
+.lr .hebig{font-family:var(--f-display);font-size:22px}
+#lookt .ru{font-size:22px;line-height:1.3}
+#lookb[hidden]{display:none}
 @media (prefers-reduced-motion:reduce){.prog u{transition:none}}
 </style>
 </head>
@@ -1001,22 +1004,47 @@ const $fab=document.createElement("button");$fab.id="fab";$fab.setAttribute("ari
 $fab.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>';
 document.body.appendChild($fab);
 const $look=document.createElement("div");$look.id="look";$look.hidden=true;
-$look.innerHTML='<div class="dbg" data-lx="1"></div><div class="lpanel" role="dialog" aria-label="תרגום מעברית לרוסית"><div class="lrow"><input id="lookq" type="search" inputmode="text" dir="auto" autocomplete="off" autocapitalize="off" placeholder="כתבו מילה בעברית" aria-label="מילה לתרגום"><button class="x" data-lx="1" aria-label="סגור">✕</button></div><div id="lookr"></div></div>';
+$look.innerHTML='<div class="dbg" data-lx="1"></div><div class="lpanel" role="dialog" aria-label="תרגום מעברית לרוסית"><div class="lrow"><input id="lookq" type="search" inputmode="text" dir="auto" autocomplete="off" autocapitalize="off" placeholder="מילה או משפט בעברית" aria-label="טקסט לתרגום" maxlength="220"><button class="x" data-lx="1" aria-label="סגור">✕</button></div><div id="lookr"></div><button class="go" id="lookb" data-tr="1" hidden>תרגם את כל הטקסט</button><div id="lookt"></div></div>';
 document.body.appendChild($look);
-const $lq=$look.querySelector("#lookq"),$lr=$look.querySelector("#lookr");
+const $lq=$look.querySelector("#lookq"),$lr=$look.querySelector("#lookr"),$lb=$look.querySelector("#lookb"),$lt=$look.querySelector("#lookt");
+let trSeq=0;
+async function freeTranslate(){
+  const q=$lq.value.trim();if(!q)return;
+  const my=++trSeq,cyr=/[а-яё]/i.test(q);
+  $lb.hidden=true;$lt.innerHTML='<p class="note">מתרגם…</p>';
+  try{
+    const r=await fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(q)+"&langpair="+(cyr?"ru|he":"he|ru"));
+    const j=await r.json();
+    if(my!==trSeq)return;
+    let t=j&&j.responseData&&j.responseData.translatedText;
+    if(!r.ok||String(j.responseStatus)!=="200"||!t||/^MYMEMORY WARNING/i.test(t))throw new Error("bad");
+    const ta=document.createElement("textarea");ta.innerHTML=t;t=ta.value;
+    $lt.innerHTML='<div class="lr"><div>'+(cyr?'<span class="hebig">'+esc(t)+"</span>":'<span class="ru">'+esc(t)+"</span>")+'<span class="he">'+esc(q)+"</span></div>"+(cyr?"":spkBtn(t))+"</div>"+
+      '<p class="note">תרגום מכונה משירות MyMemory. ייתכנו טעויות, ואין בו סימני הטעמה. מילים מהשיעורים לחיצות.</p>';
+    wrapWords($look,"#lookt .ru");
+  }catch(e){
+    if(my!==trSeq)return;
+    $lt.innerHTML='<p class="note">התרגום החופשי לא זמין כרגע. הוא דורש חיבור לאינטרנט, פועל רק באתר עצמו ולא בתוך Claude, ויש לו מכסה יומית.</p>';
+    $lb.hidden=false;
+  }
+}
 function drawLook(){
+  trSeq++;$lt.innerHTML="";$lb.hidden=!$lq.value.trim();
   const r=lookup($lq.value);
-  if(r===null){$lr.innerHTML='<p class="note">התרגום מופיע תוך כדי הקלדה. המילון כולל כ־'+(Math.round(POOL.length/10)*10)+' מילים וביטויים נפוצים, ואפשר לחפש גם ברוסית.</p>';return}
+  if(r===null){$lr.innerHTML='<p class="note">התרגום מופיע תוך כדי הקלדה. המילון המובנה כולל כ־'+(Math.round(POOL.length/10)*10)+' מילים וביטויים. לכל טקסט אחר, כולל משפטים שלמים, יש כפתור תרגום דרך האינטרנט. אפשר לכתוב גם ברוסית.</p>';return}
   if(view==="session"&&ses&&ses.cur&&!ses.cur.locked)ses.cur.peek=true;
-  if(!r.length){$lr.innerHTML='<p class="note">המילה הזאת לא נמצאת במילון של האפליקציה. נסו צורה בסיסית יותר: יחיד, זכר, או שם הפועל (״ללכת״).</p>';return}
+  if(!r.length){$lr.innerHTML='<p class="note">אין התאמה במילון המובנה. הכפתור למטה מתרגם את הטקסט דרך האינטרנט.</p>';return}
   $lr.innerHTML=r.map(p=>'<div class="lr"><div><span class="ru">'+p.ru+'</span><span class="he">'+esc(p.he)+"</span></div>"+
     (p.lex?'<button class="trb" data-lex="'+esc(p.rk)+'">הטיות</button>':"")+spkBtn(p.ru)+"</div>").join("");
 }
 $fab.addEventListener("click",()=>{if(view==="sprint")return;$look.hidden=false;$lq.value="";drawLook();$lq.focus()});
 $lq.addEventListener("input",drawLook);
+$lq.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$lq.blur();freeTranslate()}});
 $look.addEventListener("click",e=>{
   const s=e.target.closest("[data-act=say]");if(s)return say(s.dataset.say);
   const lx=e.target.closest("[data-lex]");if(lx){$look.hidden=true;return showWord(lx.dataset.lex)}
+  if(e.target.closest("[data-tr]"))return freeTranslate();
+  const wd=e.target.closest(".wd");if(wd){$look.hidden=true;return showWord(wd.textContent)}
   if(e.target.closest("[data-lx]"))$look.hidden=true;
 });
 
