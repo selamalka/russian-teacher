@@ -181,6 +181,13 @@ button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .xp p{font-size:15px}
 .xp p i{font-style:normal;font-weight:700;font-size:12px;color:var(--muted);display:block}
 .xp p .ru{font-size:17px}
+.dpanel .wd.on{background:var(--line);color:var(--line-ink);border-radius:5px;text-decoration:none;padding:0 3px}
+.tr{background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center;margin-top:6px}
+.tr>div{display:flex;flex-direction:column;min-width:0}
+.tr .ru{font-size:19px;font-weight:700;text-align:right}
+.tr b{font-family:var(--f-display);font-size:18px;font-weight:500}
+.tr small{font-size:12px;color:var(--muted)}
+.trb{border:1.5px solid var(--rule);border-radius:10px;padding:7px 10px;font-size:13px;font-weight:700;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.prog u{transition:none}}
 </style>
 </head>
@@ -388,7 +395,7 @@ const V=(inf,he,pres,past,note,fut)=>({k:"v",l:inf,he,pres,past,note,fut});
 const V1=(st,he,note)=>V(st+"ть",he,["ю","ешь","ет","ем","ете","ют"].map(x=>st+x).join(","),["л","ла","ло","ли"].map(x=>st+x).join(","),note);
 const C=(l,he,pos,forms,note)=>({k:"c",l,he,pos,forms,note});
 const G=(l,he,pos,rows,note)=>({k:"g",l,he,pos,rows,note});
-const I=(l,he,pos,note)=>({k:"i",l,he,pos,note});
+const I=(l,he,pos,note,body)=>({k:"i",l,he,pos,note,body});
 const LOAN="מילה בינלאומית שאולה, ולכן היא נשמעת מוכרת.";
 const BASE="מילת יסוד סלאבית עתיקה. היא לא נגזרת ממילה אחרת.";
 const LEX=[
@@ -486,6 +493,22 @@ G("мой","שלי","כינוי שייכות",["мой,моего',моему',�
 G("твой","שלך","כינוי שייכות",["твой,твоего',твоему',твой / твоего',твои'м,твоём","твоя',твое'й,твое'й,твою',твое'й,твое'й","твоё,твоего',твоему',твоё,твои'м,твоём","твои',твои'х,твои'м,твои' / твои'х,твои'ми,твои'х"],"נוטה בדיוק כמו {мой}."),
 G("оди'н","אחד","מספר",["оди'н,одного',одному',оди'н / одного',одни'м,одно'м","одна',одно'й,одно'й,одну',одно'й,одно'й","одно',одного',одному',одно',одни'м,одно'м","одни',одни'х,одни'м,одни' / одни'х,одни'ми,одни'х"],"מתאים במין לשם העצם, כמו ״אחד / אחת״. בהטיה ה־{и} נופלת."),
 G("ру'сский","רוסי","שם תואר",["ру'сский,ру'сского,ру'сскому,ру'сский / ру'сского,ру'сским,ру'сском","ру'сская,ру'сской,ру'сской,ру'сскую,ру'сской,ру'сской","ру'сское,ру'сского,ру'сскому,ру'сское,ру'сским,ру'сском","ру'сские,ру'сских,ру'сским,ру'сские / ру'сских,ру'сскими,ру'сских"],"{Русь} (השם העתיק של הארץ), הסיומת {-ск-} של שם תואר והסיומת {-ий}."),
+C("вы","אתם / אתן, וגם פנייה מנומסת לאדם אחד","כינוי גוף","вы,вас,вам,вас,ва'ми,вас",""),
+C("оно'","זה, הוא (לשם עצם סתמי)","כינוי גוף","оно',его',ему',его',им,нём","הצורה של {он} עם סיומת הסתמי {-о}."),
+N("паде'ж","יחסה (דקדוק)","m","паде'ж,падежа',падежу',паде'ж,падежо'м,падеже'|падежи',падеже'й,падежа'м,падежи',падежа'ми,падежа'х","מהפועל {па'дать} (ליפול). תרגום של המונח הלטיני casus, ״נפילה״."),
+I("Имени'тельный","יחסת הנושא","שם של יחסה","מהמילה {и'мя} (שם): היחסה ש״קוראת בשם״ לדבר.","שם תואר. נוטה כמו {ру'сский}."),
+I("Роди'тельный","יחסת הקניין","שם של יחסה","מהמילה {род} (מוצא, משפחה): היחסה של שייכות ומקור.","שם תואר. נוטה כמו {ру'сский}."),
+I("Да'тельный","יחסת הנתינה","שם של יחסה","מהפועל {дать} (לתת): היחסה של מי שמקבל.","שם תואר. נוטה כמו {ру'сский}."),
+I("Вини'тельный","יחסת המושא","שם של יחסה","מהמילה {вина'} (אשמה). תרגום של המונח הלטיני accusativus.","שם תואר. נוטה כמו {ру'сский}."),
+I("Твори'тельный","יחסת הכלי","שם של יחסה","מהפועל {твори'ть} (ליצור): היחסה של הכלי שבעזרתו יוצרים.","שם תואר. נוטה כמו {ру'сский}."),
+I("Предло'жный","יחסת המיקום","שם של יחסה","מהמילה {предло'г} (מילת יחס): היחסה שבאה רק אחרי מילת יחס.","שם תואר. נוטה כמו {ру'сский}."),
+I("об","על (אודות)","מילת יחס","הצורה של {о} לפני מילה שמתחילה בתנועה: {об окне'}."),
+I("из","מ־, מתוך","מילת יחס","אחריה באה יחסת הקניין: {из до'ма}."),
+I("без","בלי","מילת יחס","אחריה באה יחסת הקניין: {без воды'}."),
+I("для","בשביל","מילת יחס","אחריה באה יחסת הקניין: {для бра'та}."),
+I("от","מ־, מאת","מילת יחס","אחריה באה יחסת הקניין: {от бра'та}."),
+I("до","עד","מילת יחס","אחריה באה יחסת הקניין: {до до'ма}."),
+I("по","לפי, לאורך","מילת יחס","אחריה באה יחסת הנתינה: {по у'лице}."),
 I("а","ואילו, אבל","מילת חיבור","מחברת שני דברים מנוגדים בעדינות. חזקה פחות מ־{но}."),
 I("в","ב־ (בתוך), אל","מילת יחס","למיקום באה אחריה יחסת המיקום ({в до'ме}), ולכיוון באה יחסת המושא ({в дом})."),
 I("на","על, ב־","מילת יחס","למיקום באה אחריה יחסת המיקום ({на столе'}), ולכיוון באה יחסת המושא."),
@@ -523,8 +546,9 @@ const lexForms=e=>{const a=[e.l];
   return a.map(s=>plain(R(s.trim())).toLowerCase()).filter(Boolean)};
 LEX.forEach(e=>{new Set(lexForms(e)).forEach(f=>{if(!DICT.has(f))DICT.set(f,[]);DICT.get(f).push(e)})});
 const TOKEN=/[А-Яа-яЁё́]+(?:-[А-Яа-яЁё́]+)*/g;
-function wrapWords(){
-  $app.querySelectorAll(".ru:not([data-wr])").forEach(el=>{
+function wrapWords(root,sel){
+  (root||$app).querySelectorAll(sel||".ru:not([data-wr])").forEach(el=>{
+    if(el.hasAttribute("data-wr"))return;
     el.setAttribute("data-wr","1");
     const txt=el.textContent.trim();
     if(/^(\S\s)+\S$/.test(txt)&&txt.length>1)return; // letter cards and station names made of single letters
@@ -596,7 +620,7 @@ function entryHTML(e,tok){
     const rows=e.rows.map(r=>r.split(","));
     body='<div class="wide"><table class="g4"><tr><th></th><th>זכר</th><th>נקבה</th><th>סתמי</th><th>רבים</th></tr>'+
       CASES.map((c,i)=>"<tr><th>"+c+"</th>"+rows.map((r,g)=>td(r[i],'data-c="'+i+'" data-g="'+g+'"')).join("")+"</tr>").join("")+"</table></div>";
-  }else{tap=false;body='<p class="inv">המילה לא משתנה.</p>'}
+  }else{tap=false;body='<p class="inv">'+(e.body?fmt(e.body):"המילה לא משתנה.")+"</p>"}
   return '<section data-e="'+LEX.indexOf(e)+'"><div class="dh"><div><span class="ru lem">'+R(e.l)+'</span><span class="he">'+esc(e.he)+'</span><small>'+esc(pos)+"</small></div>"+spkBtn(R(e.l))+"</div>"+
     (e.k==="i"?"":"<h3>הטיות</h3>")+(tap?'<small class="taphint">לחיצה על צורה מסבירה מה היא אומרת ומתי משתמשים בה.</small>':"")+body+'<div class="xp" hidden></div>'+
     (e.note?"<h3>איך המילה בנויה</h3><p>"+fmt(e.note)+"</p>":"")+"</section>";
@@ -638,15 +662,32 @@ function showWord(raw){
   const show=(exact.length?exact:list).slice(0,2);
   $dict.innerHTML='<div class="dbg" data-dx="1"></div><div class="dpanel" role="dialog" aria-label="מילון"><button class="x dx" data-dx="1" aria-label="סגור">✕</button>'+show.map(e=>entryHTML(e,tok)).join("")+"</div>";
   $dict.hidden=false;
+  wrapWords($dict,".xp .ru, section>p .ru");
 }
 $dict.addEventListener("click",e=>{
   const s=e.target.closest("[data-act=say]");if(s)return say(s.dataset.say);
   if(e.target.closest("[data-dx]"))return void($dict.hidden=true);
+  const op=e.target.closest("[data-open]");if(op)return showWord(op.dataset.open);
+  const wd=e.target.closest(".wd");
+  if(wd){
+    const tok=wd.textContent.toLowerCase(),list=(DICT.get(plain(tok))||[]).slice(0,2);if(!list.length)return;
+    $dict.querySelectorAll(".tr").forEach(x=>x.remove());
+    $dict.querySelectorAll(".wd.on").forEach(x=>x.classList.remove("on"));wd.classList.add("on");
+    const box=document.createElement("div");box.className="tr";
+    box.innerHTML=list.map(en=>{const same=plain(R(en.l)).toLowerCase()===plain(tok);
+      return '<div><span class="ru">'+(same?"":wd.textContent+" ← ")+R(en.l)+'</span><b>'+esc(en.he)+'</b><small>'+esc(en.pos||(en.k==="n"?"שם עצם":en.k==="v"?"פועל":""))+
+        '</small></div><button class="trb" data-open="'+esc(plain(R(en.l)))+'">לערך המלא</button>'}).join("");
+    const host=wd.closest(".xp")||wd.closest("p");
+    if(host.classList.contains("xp"))host.appendChild(box);else host.after(box);
+    box.scrollIntoView({block:"nearest",behavior:"smooth"});
+    return;
+  }
   const td=e.target.closest("td[data-c]");if(!td)return;
   const sec=td.closest("section"),en=LEX[+sec.dataset.e],xp=sec.querySelector(".xp");
   const sp=e.target.closest("td span")||td.querySelector("span");
   sec.querySelectorAll("td.sel").forEach(x=>x.classList.remove("sel"));td.classList.add("sel");
   xp.innerHTML=explain(en,td.dataset,sp.textContent);xp.hidden=false;
+  wrapWords($dict,".xp .ru, section>p .ru");
   xp.scrollIntoView({block:"nearest",behavior:"smooth"});
 });
 let lpTimer=null,lpFired=false,lpXY=null;
