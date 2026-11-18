@@ -1135,7 +1135,7 @@ function grade(ok){
   const pr=PRAISE[Math.floor(Math.random()*PRAISE.length)];
   if(ok){fb.innerHTML='<b><span class="pr">'+R(pr[0])+"</span> · "+pr[1]+"</b>"+(c.peek?"<small>נעזרת במילון, אז הפריט יחזור מחר.</small>":"")+(it.t==="g"?"<small>"+fmt(it.why)+"</small>":"");
     foot.firstElementChild.insertAdjacentHTML("beforeend",'<button class="go" data-act="next">המשך</button>');
-    if(it.t!=="g")c.auto=setTimeout(()=>{if(ses&&ses.cur===c)next()},750)}
+}
   else{fb.innerHTML='<b>התשובה הנכונה</b><span class="ru">'+full+'</span><small>'+(it.t==="g"?fmt(it.why):esc(it.he))+"</small>"+(it.t==="r"?breakdown(it.ru):"");
     foot.firstElementChild.insertAdjacentHTML("beforeend",'<button class="go" data-act="next">המשך</button>')}
 }
