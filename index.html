@@ -258,6 +258,11 @@ button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .pop{animation:pop .45s both}
 @keyframes pulse{50%{transform:scale(1.03)}}
 .opt.ok{animation:pulse .35s}
+.ph{font-size:15px;color:var(--muted);direction:rtl;unicode-bidi:isolate;display:block}
+.phw{font-size:18px;color:var(--ink)}
+.phw b{color:var(--line);font-weight:700}
+.xp .ph,.tr .ph{font-size:13px}.xp .phw,.tr .phw{font-size:16px}
+.newword .ph{text-align:center}
 @media (prefers-reduced-motion:reduce){.prog u{transition:none}.pop,.opt.ok{animation:none}}
 </style>
 </head>
@@ -731,7 +736,7 @@ function entryHTML(e,tok){
     body='<div class="wide"><table class="g4"><tr><th></th><th>זכר</th><th>נקבה</th><th>סתמי</th><th>רבים</th></tr>'+
       CASES.map((c,i)=>"<tr><th>"+c+"</th>"+rows.map((r,g)=>td(r[i],'data-c="'+i+'" data-g="'+g+'"')).join("")+"</tr>").join("")+"</table></div>";
   }else{tap=false;body='<p class="inv">'+(e.body?fmt(e.body):"המילה לא משתנה.")+"</p>"}
-  return '<section data-e="'+LEX.indexOf(e)+'"><div class="dh"><div><span class="ru lem">'+R(e.l)+'</span><span class="he">'+esc(e.he)+'</span><small>'+esc(pos)+"</small></div>"+spkBtn(R(e.l))+"</div>"+
+  return '<section data-e="'+LEX.indexOf(e)+'"><div class="dh"><div><span class="ru lem">'+R(e.l)+'</span>'+phon(R(e.l))+'<span class="he">'+esc(e.he)+'</span><small>'+esc(pos)+"</small></div>"+spkBtn(R(e.l))+"</div>"+
     (e.k==="i"?"":"<h3>הטיות</h3>")+(tap?'<small class="taphint">לחיצה על צורה מסבירה מה היא אומרת ומתי משתמשים בה.</small>':"")+body+'<div class="xp" hidden></div>'+
     (e.note?"<h3>איך המילה בנויה</h3><p>"+fmt(e.note)+"</p>":"")+"</section>";
 }
@@ -762,7 +767,7 @@ function explain(e,d,formText){
       lines.push(["דוגמה",'<span class="ru">'+R(x[0])+"</span> · "+esc(x[1](he))+(pl?" (ברבים)":"")+spkBtn(R(x[0]))])}
   }
   const who=e.k!=="v"?"":R((d.t==="past"?PAST_P[c]:PRON[c].split(" / ")[0])+" ");
-  return '<div class="xh"><div><span class="ru">'+formText+"</span><b>"+esc(title)+"</b></div>"+spkBtn(who+formText)+"</div>"+lines.map(l=>"<p><i>"+l[0]+"</i>"+l[1]+"</p>").join("");
+  return '<div class="xh"><div><span class="ru">'+formText+"</span>"+phon(formText)+"<b>"+esc(title)+"</b></div>"+spkBtn(who+formText)+"</div>"+lines.map(l=>"<p><i>"+l[0]+"</i>"+l[1]+"</p>").join("");
 }
 function showWord(raw){
   if(view==="sprint")return;
@@ -786,7 +791,7 @@ $dict.addEventListener("click",e=>{
     $dict.querySelectorAll(".wd.on").forEach(x=>x.classList.remove("on"));wd.classList.add("on");
     const box=document.createElement("div");box.className="tr";
     box.innerHTML=list.map(en=>{const same=plain(R(en.l)).toLowerCase()===plain(tok);
-      return '<div><span class="ru">'+(same?"":wd.textContent+" ← ")+R(en.l)+'</span><b>'+esc(en.he)+'</b><small>'+esc(en.pos||(en.k==="n"?"שם עצם":en.k==="v"?"פועל":""))+
+      return '<div><span class="ru">'+(same?"":wd.textContent+" ← ")+R(en.l)+'</span>'+phon(same?R(en.l):wd.textContent)+'<b>'+esc(en.he)+'</b><small>'+esc(en.pos||(en.k==="n"?"שם עצם":en.k==="v"?"פועל":""))+
         '</small></div>'+spkBtn(R(en.l))+'<button class="trb" data-open="'+esc(plain(R(en.l)))+'">לערך המלא</button>'}).join("");
     const host=wd.closest(".xp")||wd.closest("p");
     if(host.classList.contains("xp"))host.appendChild(box);else host.after(box);
@@ -858,6 +863,63 @@ function plan(){
     extra=shuffle(ALL.filter(i=>seen(i)&&!used.has(i.id))).sort((a,b)=>S.items[a.id][0]-S.items[b.id][0]).slice(0,SESSION-n)}
   return {due,fresh,extra,cu};
 }
+
+/* ---------- phonetic transcription into Hebrew letters ---------- */
+// Approximates how a word is actually said: unstressed o sounds like a, final voiced consonants
+// lose their voice, and a few spelling quirks (что, -ого, -ться) are read the way they sound.
+const PH_C={"б":"בּ","в":"ו","г":"ג","д":"ד","ж":"ז׳","з":"ז","й":"י","к":"ק","л":"ל","м":"מ","н":"נ","п":"פּ","р":"ר","с":"ס","т":"ט","ф":"פ","х":"ח","ц":"צ","ч":"צ׳","ш":"ש","щ":"שׁ"};
+const PH_FIN={"м":"ם","н":"ן","ц":"ץ","ф":"ף"};
+const PH_DEV={"б":"п","в":"ф","г":"к","д":"т","ж":"ш","з":"с"};
+const PH_VL="кпстфхцчшщ",PH_V="аеёиоуыэюя";
+function phonWord(w,clitic){
+  const cs=[];for(const ch of w){if(ch===ACC){if(cs.length)cs[cs.length-1].s=1}else cs.push({c:ch,s:0})}
+  const pl=cs.map(x=>x.c).join(""),isV=c=>PH_V.includes(c),soft=c=>c==="ь"||c==="ъ";
+  if(!cs.some(x=>x.s))cs.forEach(x=>{if(x.c==="ё")x.s=1});
+  const nv=cs.filter(x=>isV(x.c)).length;
+  if(nv===1&&!clitic)cs.forEach(x=>{if(isV(x.c))x.s=1});
+  if(pl==="что"||pl==="чтобы")cs[0].c="ш";
+  if(pl==="конечно")cs[4].c="ш";
+  if(pl==="сегодня")cs[2].c="в";
+  const vs=pl.indexOf("вств");if(vs>=0)cs.splice(vs,1);
+  if(/[ое]го$/.test(pl)&&!["много","немного","дорого","строго"].includes(pl))cs[cs.length-2].c="в";
+  const ts=/(ться|тся)$/.exec(pl);
+  if(ts)cs.splice(cs.length-ts[1].length,ts[1].length,{c:"ц",s:0},{c:"а",s:0});
+  for(let i=0;i<cs.length;i++){if(!PH_DEV[cs[i].c])continue;
+    let j=i+1;while(j<cs.length&&soft(cs[j].c))j++;
+    if(j>=cs.length||PH_VL.includes(cs[j].c))cs[i].c=PH_DEV[cs[i].c]}
+  const n=cs.length;let last=n-1;while(last>=0&&soft(cs[last].c))last--;
+  const vow=(x,after,end,sep)=>{switch(x.c){
+    case "о":if(x.s)return after?"וֹ":"אוֹ";
+    case "а":return after?(end?"ָה":"ַ"):(end?"אָה":"אַ");
+    case "у":return after?"וּ":"אוּ";
+    case "и":case "ы":return after&&!sep?"ִי":"אִי";
+    case "э":return after?(end?"ֶה":"ֶ"):"אֶ";
+    case "е":return after&&!sep?(end?"ֶה":"ֶ"):(end?"יֶה":"יֶ");
+    case "я":return end?"יָה":"יָ";
+    case "ю":return "יוּ";
+    case "ё":return "יוֹ"}return ""};
+  const hot=(s,x)=>x.s&&nv>1?"<b>"+s+"</b>":s;
+  let out="",i=0;
+  while(i<n){const x=cs[i];
+    if(soft(x.c)){i++;continue}
+    if(isV(x.c)){out+=hot(vow(x,false,i===last,false),x);i++;continue}
+    let h=PH_C[x.c];
+    if(h==null){out+=x.c;i++;continue}
+    if(i+1<n&&cs[i+1].c===x.c){i++;continue}
+    let j=i+1,sep=false;while(j<n&&soft(cs[j].c)){sep=true;j++}
+    if(j<n&&isV(cs[j].c)){const v=cs[j],s=vow(v,true,j===last,sep);
+      if(x.c==="в"&&i>0&&s[0]!=="ו")h="וו";
+      const unit=h.endsWith("׳")&&/^[ְ-ּ]/.test(s)?h[0]+s[0]+"׳"+s.slice(1):h+s;
+      out+=hot(unit,v);i=j+1;continue}
+    if(i===last&&PH_FIN[x.c])h=PH_FIN[x.c];
+    else if(x.c==="в"&&i>0)h="וו";
+    out+=h;i=j}
+  return out}
+function phon(text){
+  return '<span class="ph">נשמע: <span class="phw">'+esc(plainKeep(text)).replace(/[А-Яа-яЁё́]+(?:-[А-Яа-яЁё́]+)*/g,w=>{
+    const ps=w.toLowerCase().split("-"),own=x=>x.includes(ACC)||x.includes("ё"),marked=ps.some(own);
+    return ps.map(x=>phonWord(x,ps.length>1&&marked&&!own(x))).join("-")})+"</span></span>"}
+function plainKeep(t){return String(t).replace(/<[^>]*>/g,"")}
 
 /* ---------- letters: cards, breakdowns, alphabet grid ---------- */
 const LITEM=Object.fromEntries(ALL.filter(i=>i.t==="l").map(i=>[i.ru[0],i]));
@@ -998,7 +1060,7 @@ function step(){
       '<span class="he">'+esc(hp[1]||hp[0])+'</span><small class="trn">נשמע: '+esc(hp[0])+"</small>"+spkBtn(it.ru)+"</div>",
       '<button class="go" data-act="next">הבנתי</button>')}
   if(st.k==="intro"){const it=st.it;
-    return shell('<span class="tag">'+({w:"מילה חדשה",l:"אות חדשה",r:"מילה לקריאה"}[it.t]||"משפט חדש")+'</span><div class="card newword"><span class="ru">'+it.ru+'</span><span class="he">'+esc(it.he)+"</span>"+spkBtn(it.ru)+"</div>",
+    return shell('<span class="tag">'+({w:"מילה חדשה",l:"אות חדשה",r:"מילה לקריאה"}[it.t]||"משפט חדש")+'</span><div class="card newword"><span class="ru">'+it.ru+'</span>'+phon(it.ru)+'<span class="he">'+esc(it.he)+"</span>"+spkBtn(it.ru)+"</div>",
       '<button class="go" data-act="next">הבנתי</button>')}
   const it=st.it,kind=kindFor(it);
   ses.cur={kind,it,st,locked:false};
@@ -1190,7 +1252,7 @@ async function freeTranslate(){
     if(!r.ok||String(j.responseStatus)!=="200"||!t||/^MYMEMORY WARNING/i.test(t))throw new Error("bad");
     const ta=document.createElement("textarea");ta.innerHTML=t;t=ta.value;
     if(sp){await sp;if(my!==trSeq)return;t=addStress(t)}
-    $lt.innerHTML='<div class="lr"><div>'+(cyr?'<span class="hebig">'+esc(t)+"</span>":'<span class="ru">'+esc(t)+"</span>")+'<span class="he">'+esc(q)+"</span></div>"+(cyr?"":spkBtn(t))+"</div>"+
+    $lt.innerHTML='<div class="lr"><div>'+(cyr?'<span class="hebig">'+esc(t)+"</span>":'<span class="ru">'+esc(t)+"</span>"+phon(t))+'<span class="he">'+esc(q)+"</span></div>"+(cyr?"":spkBtn(t))+"</div>"+
       '<p class="note">תרגום מכונה משירות MyMemory, ייתכנו בו טעויות. סימני ההטעמה נוספו ממילון OpenRussian, ומילה נדירה עשויה להישאר בלי סימן. מילים מהשיעורים לחיצות.</p>';
     wrapWords($look,"#lookt .ru");
   }catch(e){
@@ -1205,7 +1267,7 @@ function drawLook(){
   if(r===null){$lr.innerHTML='<p class="note">התרגום מופיע תוך כדי הקלדה. המילון המובנה כולל כ־'+(Math.round(POOL.length/10)*10)+' מילים וביטויים. לכל טקסט אחר, כולל משפטים שלמים, יש כפתור תרגום דרך האינטרנט. אפשר לכתוב גם ברוסית.</p>';return}
   if(view==="session"&&ses&&ses.cur&&!ses.cur.locked)ses.cur.peek=true;
   if(!r.length){$lr.innerHTML='<p class="note">אין התאמה במילון המובנה. הכפתור למטה מתרגם את הטקסט דרך האינטרנט.</p>';return}
-  $lr.innerHTML=r.map(p=>'<div class="lr"><div><span class="ru">'+p.ru+'</span><span class="he">'+esc(p.he)+"</span></div>"+
+  $lr.innerHTML=r.map(p=>'<div class="lr"><div><span class="ru">'+p.ru+'</span>'+phon(p.ru)+'<span class="he">'+esc(p.he)+"</span></div>"+
     (p.lex?'<button class="trb" data-lex="'+esc(p.rk)+'">הטיות</button>':"")+spkBtn(p.ru)+"</div>").join("");
 }
 $fab.addEventListener("click",()=>{if(view==="sprint")return;$look.hidden=false;$lq.value="";drawLook();$lq.focus()});
