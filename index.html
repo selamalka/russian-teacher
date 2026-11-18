@@ -147,10 +147,11 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .wd{cursor:pointer;text-decoration:underline dotted var(--rule);text-underline-offset:5px;text-decoration-thickness:1.5px}
 button .wd{text-decoration:none}
 button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-#dict{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;justify-content:flex-end}
+#dict{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:flex-end}
 #dict[hidden]{display:none}
 .dbg{position:absolute;inset:0;background:rgba(10,16,24,.45)}
 .dpanel{position:relative;background:var(--surface);color:var(--ink);border-radius:20px 20px 0 0;max-height:78%;overflow-y:auto;width:100%;max-width:480px;margin:0 auto;padding:18px 18px calc(22px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:6px}
+.backb{align-self:flex-start;border:1.5px solid var(--rule);border-radius:999px;padding:6px 14px;font-size:14px;font-weight:700;color:var(--line);margin-bottom:4px}
 .dpanel .dx{position:absolute;top:10px;inset-inline-end:10px;z-index:1}
 .dpanel section{display:flex;flex-direction:column;gap:6px}
 .dpanel section+section{border-top:1px solid var(--rule);margin-top:14px;padding-top:14px}
@@ -793,7 +794,7 @@ function showWord(raw){
   if(view==="session"&&ses&&ses.cur&&!ses.cur.locked)ses.cur.peek=true;
   const exact=list.filter(e=>tok!==plain(tok)&&[e.l].concat(e.k==="n"||e.k==="c"?e.forms.split(/[,|\/]/):e.k==="v"?(e.pres+","+e.past).split(","):e.k==="g"?e.rows.join(",").split(/[,\/]/):[]).some(f=>R(f.trim()).toLowerCase()===tok));
   const show=(exact.length?exact:list).slice(0,2);
-  $dict.innerHTML='<div class="dbg" data-dx="1"></div><div class="dpanel" role="dialog" aria-label="מילון"><button class="x dx" data-dx="1" aria-label="סגור">✕</button>'+show.map(e=>entryHTML(e,tok)).join("")+"</div>";
+  $dict.innerHTML='<div class="dbg" data-dx="1"></div><div class="dpanel" role="dialog" aria-label="מילון"><button class="x dx" data-dx="1" aria-label="סגור">✕</button>'+(typeof $look!=="undefined"&&!$look.hidden?'<button class="backb" data-dx="1">← חזרה לחיפוש</button>':"")+show.map(e=>entryHTML(e,tok)).join("")+"</div>";
   $dict.hidden=false;
   wrapWords($dict,".xp .ru, section>p .ru");
 }
@@ -1292,9 +1293,9 @@ $lq.addEventListener("input",drawLook);
 $lq.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$lq.blur();freeTranslate()}});
 $look.addEventListener("click",e=>{
   const s=e.target.closest("[data-act=say]");if(s)return say(s.dataset.say);
-  const lx=e.target.closest("[data-lex]");if(lx){$look.hidden=true;return showWord(lx.dataset.lex)}
+  const lx=e.target.closest("[data-lex]");if(lx)return showWord(lx.dataset.lex);
   if(e.target.closest("[data-tr]"))return freeTranslate();
-  const wd=e.target.closest(".wd");if(wd){$look.hidden=true;return showWord(wd.textContent)}
+  const wd=e.target.closest(".wd");if(wd)return showWord(wd.textContent);
   if(e.target.closest("[data-lx]"))$look.hidden=true;
 });
 
