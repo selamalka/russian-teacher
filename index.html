@@ -402,7 +402,7 @@ const fmt=s=>esc(s).replace(/\{([^}]+)\}/g,(m,x)=>'<span class="ru">'+R(x)+"</sp
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const dayNum=()=>{const d=new Date(Date.now());return Math.floor((d.getTime()-d.getTimezoneOffset()*60000)/86400000)};
 const SPK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>';
-const spkBtn=t=>'<button class="spk" data-act="say" data-say="'+esc(plain(t))+'" aria-label="השמע">'+SPK+"</button>";
+const spkBtn=t=>'<button class="spk" data-act="say" data-say="'+esc(t)+'" aria-label="השמע">'+SPK+"</button>";
 
 /* ---------- dictionary ---------- */
 const CASES=["נושא","קניין","נתינה","מושא","כלי","מיקום"];
@@ -742,7 +742,7 @@ setSpeak();
 if(hasSynth){findVoice();try{speechSynthesis.addEventListener("voiceschanged",findVoice)}catch(e){}}
 function say(t){
   try{
-    if(tts){tts.speak(t,{language:"ru",rate:0.9}).catch(()=>{});return}
+    if(tts){tts.speak(plain(t),{language:"ru",rate:0.9}).catch(()=>{});return}
     if(hasSynth){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="ru-RU";if(ruVoice)u.voice=ruVoice;u.rate=0.9;speechSynthesis.speak(u)}
   }catch(e){}
 }
